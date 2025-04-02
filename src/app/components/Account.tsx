@@ -34,7 +34,6 @@ export function Account() {
           )}
           <p>Connected to {connector?.name} Connector</p>
           <BalanceBNB />
-          {address && <ERC20Balance tokenAddress={address} />}
         </div>
         <button
           className="px-4 py-2 bg-green-500 rounded-md cursor-pointer hover:opacity-90"
@@ -45,12 +44,14 @@ export function Account() {
         </button>
       </div>
       <div className="mt-2 p-2 rounded border flex items-center gap-2">
+        <ERC20Balance />
+      </div>
+      <div className="mt-2 p-2 rounded border flex items-center gap-2">
         <TransferBNB />
       </div>
       <div className="mt-2 p-2 rounded border flex items-center gap-2">
-        {address && <TransferERC20 ERC20Address={address} />}
+      {address && <TransferERC20 address={address} />}
       </div>
     </div>
   );
 }
-

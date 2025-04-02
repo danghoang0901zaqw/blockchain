@@ -6,7 +6,7 @@ export default function Balance() {
     address,
   });
 
-  if (!isConnected) return <p>Vui lòng kết nối ví</p>;
+  if (!isConnected) return <p>Connect Wallet</p>;
   if (isLoading) return <p>Loading Balance BNB...</p>;
 
   return <h2>Balance BNB: {data?.formatted} BNB</h2>;

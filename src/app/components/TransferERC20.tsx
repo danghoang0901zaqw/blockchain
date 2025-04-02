@@ -1,79 +1,88 @@
 "use client";
-import { useAccount, useWalletClient } from "wagmi";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { parseUnits } from "viem";
-import { useState } from "react";
+import { type BaseError, useWriteContract } from "wagmi";
 
 interface TransferERC20Props {
-  ERC20Address: string;
+  address: string;
 }
 const ERC20_ABI = [
   {
-    constant: false,
-    inputs: [
-      { name: "_to", type: "address" },
-      { name: "_value", type: "uint256" },
-    ],
-    name: "transfer",
-    outputs: [{ name: "", type: "bool" }],
     type: "function",
+    name: "approve",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "transferFrom",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "sender", type: "address" },
+      { name: "recipient", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ type: "bool" }],
   },
 ];
 
-export default function TransferERC20({ ERC20Address }: TransferERC20Props) {
-  const { address } = useAccount();
-  const { data: walletClient } = useWalletClient();
-
+export default function TransferERC20({ address }: TransferERC20Props) {
+  const { data: hash, isPending, writeContract, error } = useWriteContract();
   const [toAddress, setToAddress] = useState("");
   const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const transferToken = async () => {
-    if (!walletClient || !address) {
-      alert("Connect Wallet!");
+  const transferToken = () => {
+    if (!address) {
+      toast.info("Connect Wallet!");
       return;
     }
-    try {
-      setIsLoading(true);
-      const amountInWei = parseUnits(amount, 1);
-      const txHash = await walletClient.writeContract({
-        address: ERC20Address,
-        abi: ERC20_ABI,
-        functionName: "transfer",
-        args: [toAddress, amountInWei],
-      });
-
-      alert(`Success! TX Hash: ${txHash}`);
-    } catch (error) {
-      console.error("Lỗi khi chuyển token:", error);
-      alert("Fail!");
-    } finally {
-      setIsLoading(false);
-    }
+    const amountInWei = parseUnits(amount, 1);
+    writeContract({
+      address: address as `0x${string}`,
+      abi: ERC20_ABI,
+      functionName: "transferFrom",
+      args: [address, toAddress, amountInWei],
+    });
   };
+  useEffect(() => {
+    if (hash) {
+      toast.success(`Transfer ERC20 successful!`);
+      setAmount("");
+      setToAddress("");
+    }
+    if (error) {
+      toast.error((error as BaseError)?.shortMessage || error?.message);
+    }
+  }, [error, hash]);
 
   return (
     <div className="flex flex-col gap-4 w-full">
       <h2>Transfer ERC20 Token</h2>
-        <input
-          type="text"
-          placeholder="Address"
-          className="px-3 py-[10px] peer mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm"
-          value={toAddress}
-          onChange={(e) => setToAddress(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Token"
-          className="px-3 py-[10px] peer mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
+      <input
+        type="text"
+        placeholder="Address"
+        className="px-3 py-[10px] peer mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm"
+        value={toAddress}
+        onChange={(e) => setToAddress(e.target.value)}
+      />
+      <input
+        type="text"
+        placeholder="Token"
+        className="px-3 py-[10px] peer mt-0.5 w-full rounded border-gray-300 shadow-sm sm:text-sm"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+      />
       <button
         className="px-4 py-2 bg-green-500 rounded-md cursor-pointer hover:opacity-90"
         onClick={transferToken}
-        disabled={isLoading}
+        disabled={isPending}
       >
-        {isLoading ? "Sending..." : "Transfer Token"}
+        {isPending ? "Sending..." : "Transfer Token"}
       </button>
     </div>
   );

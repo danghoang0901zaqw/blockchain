@@ -1,25 +1,43 @@
 "use client";
-
-import { useAccount, useSendTransaction } from "wagmi";
+import {
+  type BaseError,
+  useAccount,
+  useSendTransaction,
+} from "wagmi";
 import { parseEther } from "viem";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function TransferBNB() {
-  const { address, isConnected } = useAccount();
-  const { sendTransaction, isPending } = useSendTransaction();
-
+  const { isConnected } = useAccount();
+  const {
+    data: hash,
+    sendTransaction,
+    isPending,
+    error,
+  } = useSendTransaction();
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!to || !amount) return;
     sendTransaction({
-      to,
+      to: to as `0x${string}`,
       value: parseEther(amount),
     });
   };
+  useEffect(() => {
+    if (hash) {
+      toast.success(`Transfer successful!`);
+      setAmount("");
+      setTo("");
+    }
+    if (error) {
+      toast.error((error as BaseError)?.shortMessage || error?.message);
+    }
+  }, [error, hash]);
 
-  if (!isConnected) return <p>Vui lòng kết nối ví</p>;
+  if (!isConnected) return <p>Connect Wallet</p>;
 
   return (
     <div className="flex flex-col gap-4 w-full">
